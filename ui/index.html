@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Editing Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <div id="prompt">
+            <div id="prompt-options>
+                <label for="ai-model">AI Model:</label>
+                <select id="ai-model">
+                </select>
+                <label for="temperature">Temperature:</label>
+                <input type="number" id="temperature" name="temperature" min="0.0" max="1.0" step="0.01" value="0.0">
+            </div>
+            <textarea id="prompt-input" placeholder="Enter your prompt here..."></textarea>
+            <div id="advanced-area">
+            <button id="toggle-advanced">Show Advanced Options</button>
+            <div id="advanced-prompt-options" style="display: none;">
+                <label for="stop-word-list">Stop Words:</label>
+                <input type="text" id="stop-word-list" placeholder="(default)" />
+            </div>
+            </div>
+            <div id="prompt-commands">
+                <button id="flag-prompt-btn">Flag Prompt</button>
+                <button id="invoke-btn">Invoke</button>
+            </div>
+            <label for="revision-history">History:</label>
+            <div id="revision-history">
+                <!-- Revision history tree will be dynamically populated here -->
+            </div>
+            <div id="variables-section">
+                
+                <h3>Variables</h3>
+                <div id="variables-inputs">
+                    <input type="text" id="variable-name" placeholder="Variable name" />
+                    <textarea id="variable-value" placeholder="Value"></textarea>
+                </div>
+                <button id="add-variable-btn">Add Variable</button>
+                <ul id="variables-list">
+                    <!-- Variables list will be populated here -->
+                </ul>
+            </div>
+        </div>
+        <div id="invoke">
+            <label for="invoke-response">Respose:</label>
+            <div>
+            <textarea id="invoke-response" placeholder="response..."></textarea>
+        </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
