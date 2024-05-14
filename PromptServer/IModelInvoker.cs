@@ -1,4 +1,4 @@
 public interface IModelInvoker
 {
-    Task<string> InvokeModelAsync(string prompt, string model, float temperature, string[] stop);
+    Task<string> InvokeModelAsync(string prompt, string model, float temperature, string[] stop, string systemPrompt);
 }

@@ -46,7 +46,7 @@ class JsonRpcWebSocketClient {
             const request = {
                 jsonrpc: "2.0",
                 method: "InvokeModel",
-                params: [invokeRequest.prompt, invokeRequest.model, invokeRequest.temperature, invokeRequest.stop],
+                params: [invokeRequest.prompt, invokeRequest.model, invokeRequest.temperature, invokeRequest.stop, invokeRequest.system],
                 id: requestId
             };
             this.socket.send(JSON.stringify(request));
@@ -136,6 +136,7 @@ const VersionTreeService = {
             title: new Date().toLocaleString(),
             model: data.model,
             prompt: data.prompt,
+            system: data.system,
             temperature: data.temperature,
             stopWords: data.stopWords,
             children: [],
@@ -143,15 +144,6 @@ const VersionTreeService = {
             invokeHistory: [],
             isHead: true
         };
-
-        // if (data.parentId === null) {
-        //     state.versionTree.push(newNode);
-        // } else {
-        //     const parentNode = this.findNodeById(data.parentId, state.versionTree);
-        //     if (parentNode) {
-        //         parentNode.children.push(newNode);
-        //     }
-        // }
 
         if (!state.selectedNode) {
             state.versionTree.push(newNode);
@@ -264,10 +256,12 @@ const PromptServerService = {
         console.log('Invoking prompt:', promptNode.prompt);
 
         const compiledPrompt = VariableService.replaceVariablesInPrompt(promptNode.prompt);
+        const compiledSystemPrompt = VariableService.replaceVariablesInPrompt(promptNode.system);
         const compiledStopWords = getStopWords(promptNode.stopWords);
 
         const invokeRequest = {
             prompt: compiledPrompt, 
+            system: compiledSystemPrompt,
             model: promptNode.model,
             temperature: promptNode.temperature,
             stop: compiledStopWords
@@ -331,9 +325,11 @@ function setupVersionTreeUI() {
 
 function setVersionTreeUI(node) {
     document.getElementById('prompt-input').value = node.prompt;
-    updateVersionTreeUI();
+    document.getElementById('system-prompt-input').value = node.system;
     const flagBtn = document.getElementById('flag-prompt-btn');
     flagBtn.textContent = node.flagged ? 'Unflag Prompt' : 'Flag Prompt';
+
+    updateVersionTreeUI();
 }
 
 function setupPromptUI() {
@@ -372,6 +368,7 @@ function setupStopWordsUI() {
 
 function promptModifyCheck() {
     const promptText = document.getElementById('prompt-input').value;
+    const systemText = document.getElementById('system-prompt-input').value;
     const model = document.getElementById('ai-model').value;
     const temperature = parseFloat(document.getElementById('temperature').value);
     const stopWords = document.getElementById('stop-word-list').value !== '' ? document.getElementById('stop-word-list').value : null;
@@ -383,6 +380,10 @@ function promptModifyCheck() {
     }
 
     if (state.selectedNode && promptText !== state.selectedNode.prompt) {
+        isModified = true;
+    }
+
+    if (state.selectedNode && systemText !== state.selectedNode.system) {
         isModified = true;
     }
 
@@ -402,6 +403,7 @@ function promptModifyCheck() {
         node = {
             parentId: state.selectedNode ? state.selectedNode.id : null,
             prompt: promptText,
+            system: systemText,
             model: model,
             temperature: temperature,
             stopWords: stopWords

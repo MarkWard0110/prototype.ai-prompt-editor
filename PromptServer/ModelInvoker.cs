@@ -40,10 +40,10 @@ public class ModelInvoker : IModelInvoker
         }
     }
 
-    public Task<string> InvokeModelAsync(string prompt, string model, float temperature, string[] stop)
+    public Task<string> InvokeModelAsync(string prompt, string model, float temperature, string[] stop, string systemPrompt)
     {
         var tcs = new TaskCompletionSource<string>();
-        var request = new ModelRequest(tcs, prompt, model, temperature, stop);
+        var request = new ModelRequest(tcs, prompt, model, temperature, stop, systemPrompt);
         _requestQueue.Enqueue(request);
         return tcs.Task;
     }
@@ -60,10 +60,10 @@ public class ModelInvoker : IModelInvoker
                     var modelRequest = new GenerateCompletionRequest
                     {
                         Model = request.Model,
+                        System = request.System,
                         Prompt = request.Prompt,
                         Options = new RequestOptions
                         {
-
                             Temperature = request.Temperature,
                             Stop = request.Stop
                         }
@@ -108,16 +108,19 @@ class ModelRequest
     public string Model { get; }
     public string Prompt { get; }
 
+    public string System {get; }
+
     public float Temperature { get; }
 
     public string[] Stop { get; }
 
-    public ModelRequest(TaskCompletionSource<string> completionSource, string prompt, string model, float temperature, string[] stop)
+    public ModelRequest(TaskCompletionSource<string> completionSource, string prompt, string model, float temperature, string[] stop, string systemPrompt)
     {
         CompletionSource = completionSource;
         Model = model;
         Prompt = prompt;
         Temperature = temperature;
         Stop = stop;
+        System = systemPrompt;
     }
 }
