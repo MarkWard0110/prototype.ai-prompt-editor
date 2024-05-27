@@ -11,6 +11,6 @@ public class OllamaService: IOllamaService
     public async Task<string[]> ListModelsAsync()
     {
         var models = await _ollama.ListLocalModels();
-        return models.Select(m => m.Name).ToArray();
+        return [.. models.Select(m => m.Name).Order()];
     }
 }
