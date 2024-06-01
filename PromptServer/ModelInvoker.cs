@@ -65,7 +65,8 @@ public class ModelInvoker : IModelInvoker
                         Options = new RequestOptions
                         {
                             Temperature = request.Temperature,
-                            Stop = request.Stop
+                            Stop = request.Stop,
+                            // NumCtx = 8192
                         }
                     };
 
