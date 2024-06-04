@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Concurrent;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using System.Threading.Tasks;
 using OllamaSharp;
 using OllamaSharp.Models;
+using OllamaSharp.Models.Chat;
+using OllamaSharp.Streamer;
 
 public class ModelInvoker : IModelInvoker
 {
@@ -40,11 +43,15 @@ public class ModelInvoker : IModelInvoker
         }
     }
 
-    public Task<string> InvokeModelAsync(string prompt, string model, float temperature, string[] stop, string systemPrompt)
+    public Task<string> InvokeModelAsync(InvokeRequest request)
     {
         var tcs = new TaskCompletionSource<string>();
-        var request = new ModelRequest(tcs, prompt, model, temperature, stop, systemPrompt);
-        _requestQueue.Enqueue(request);
+        var modelMessages = request.messages.Select(m => new ModelMessage(){
+            Role = m.role,
+            Content = m.content
+            }).ToArray(); 
+        var modelRequest = new ModelRequest(tcs, request.model, request.temperature, request.stop, modelMessages); // Use the converted array
+        _requestQueue.Enqueue(modelRequest);
         return tcs.Task;
     }
 
@@ -57,11 +64,14 @@ public class ModelInvoker : IModelInvoker
                 try
                 {
                     await _modelSemaphore.WaitAsync(); // Wait for availability
-                    var modelRequest = new GenerateCompletionRequest
-                    {
+                    
+                    var chatRequest = new ChatRequest{
                         Model = request.Model,
-                        System = request.System,
-                        Prompt = request.Prompt,
+                        Messages = request.Messages.Select(m => new Message
+                        {
+                            Role = m.Role,
+                            Content = m.Content
+                        }).ToList(),
                         Options = new RequestOptions
                         {
                             Temperature = request.Temperature,
@@ -73,17 +83,17 @@ public class ModelInvoker : IModelInvoker
                     var timeout = TimeSpan.FromMinutes(10);
                     using var cts = new CancellationTokenSource(timeout);
                    
-                    ConversationContextWithResponse? modelResponse = null;
+                    ConversationResponse? modelResponse = null;
                     try
                     {
-                        modelResponse = await _ollama.GetCompletion(modelRequest, cts.Token);   
+                        modelResponse = await _ollama.SendChat(chatRequest, new ActionResponseStreamer<ChatResponseStream>(s => {}), cts.Token);
                     }
                     catch (TaskCanceledException)
                     {
-                        modelResponse = new ConversationContextWithResponse("<timeout>", [], null);
+                        modelResponse = new ConversationResponse(new Message{ Content = string.Empty, Role = string.Empty}, null);
                     }
 
-                    request.CompletionSource.SetResult(modelResponse.Response);
+                    request.CompletionSource.SetResult(modelResponse.Response.Content);
                 }
                 catch (Exception ex)
                 {
@@ -102,26 +112,4 @@ public class ModelInvoker : IModelInvoker
     }
 }
 
-class ModelRequest
-{
-    public TaskCompletionSource<string> CompletionSource { get; }
 
-    public string Model { get; }
-    public string Prompt { get; }
-
-    public string System {get; }
-
-    public float Temperature { get; }
-
-    public string[] Stop { get; }
-
-    public ModelRequest(TaskCompletionSource<string> completionSource, string prompt, string model, float temperature, string[] stop, string systemPrompt)
-    {
-        CompletionSource = completionSource;
-        Model = model;
-        Prompt = prompt;
-        Temperature = temperature;
-        Stop = stop;
-        System = systemPrompt;
-    }
-}
