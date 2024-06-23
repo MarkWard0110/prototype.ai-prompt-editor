@@ -311,6 +311,7 @@ const PromptServerService = {
         const invokeEntry = {
             request: invokeRequest,
             requestTimestamp: new Date().toUTCString(),
+            hasResponse: false,
             response: null,
             responseTimestamp: null
         };
@@ -320,6 +321,7 @@ const PromptServerService = {
 
         const result = await this.rpcClient.invokeModel(invokeRequest);
         invokeEntry.response = result;
+        invokeEntry.hasResponse = true;
         invokeEntry.responseTimestamp = new Date().toUTCString();
 
         EventBus.publish('stateChanged');
@@ -342,6 +344,30 @@ function getStopWords(stopWords) {
     return stopWords.split(',').map(word => word.trim()).filter(word => word.length > 0);
 }
 
+function parseMessages(input) {
+    input = input.replace(/\\n/g, '\n');
+    const sections = input.split('<|eot_id|>');
+    const messages = [];
+
+    for (const section of sections) {
+        const roleStart = section.indexOf('<|start_header_id|>') + '<|start_header_id|>'.length;
+        const roleEnd = section.indexOf('<|end_header_id|>');
+        const role = section.slice(roleStart, roleEnd).trim();
+
+        const contentStart = section.indexOf('<|end_header_id|>') + '<|end_header_id|>'.length;
+        const content = section.slice(contentStart).trim();
+
+        if (role) {
+            const message = {
+                role: role,
+                content: content
+            };
+            messages.push(message);
+        }
+    }
+
+    return messages;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('system loading...');
@@ -399,6 +425,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('add-message-btn').addEventListener('click', function() {
         addUiChatMessage('','');
+    });
+
+    
+    document.getElementById('load-chat-btn').addEventListener('click', function() {
+        const messages = parseMessages(document.getElementById('load-chat-value').value)
+        
+        clearChatPrompts();
+
+        messages.forEach(message => {
+            addUiChatMessage(message.role, message.content);
+        });
+
     });
 
     StateService.initialize();
