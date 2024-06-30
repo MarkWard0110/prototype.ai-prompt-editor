@@ -10,13 +10,27 @@ class ModelRequest
 
     public string[] Stop { get; }
 
-    public ModelRequest(TaskCompletionSource<string> completionSource, string model, float temperature, string[] stop, ModelMessage[] messages)
+    public float TopP { get; }
+
+    public int NumCtx { get; }
+
+    public int NumPredict { get; }
+
+    public ModelRequest(TaskCompletionSource<string> completionSource, InvokeRequest invokeRequest)
     {
         CompletionSource = completionSource;
-        Model = model;
-        Temperature = temperature;
-        Stop = stop;
-        Messages = messages;
+        var modelMessages = invokeRequest.messages.Select(m => new ModelMessage(){
+            Role = m.role,
+            Content = m.content
+            }).ToArray(); 
+
+        Model = invokeRequest.model;
+        Temperature = invokeRequest.temperature;
+        Stop = invokeRequest.stop;
+        TopP = invokeRequest.top_p;
+        NumCtx = invokeRequest.num_ctx;
+        NumPredict = invokeRequest.num_predict;
+        Messages = modelMessages;
     }
 }
 

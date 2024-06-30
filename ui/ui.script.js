@@ -43,12 +43,18 @@ function promptModify() {
     const messages = getEditorMessages();
     const model = document.getElementById('ai-model').value;
     const temperature = parseFloat(document.getElementById('temperature').value);
+    const num_ctx = parseFloat(document.getElementById('num_ctx').value);
+    const top_p = parseFloat(document.getElementById('top_p').value);
+    const num_predict = parseFloat(document.getElementById('num_predict').value);
     const stopWords = document.getElementById('stop-word-list').value !== '' ? document.getElementById('stop-word-list').value : null;
 
     node = {
         messages: messages,
         model: model,
         temperature: temperature,
+        top_p: top_p,
+        num_ctx: num_ctx,
+        num_predict: num_predict,
         stopWords: stopWords
     };
 
@@ -80,6 +86,24 @@ function setupModelsUI() {
 function setupTemperatureUI() {
     EventBus.subscribe('nodeSelected', (node) => {
         updateTemperatureUI(node);
+    });
+}
+
+function setupNumCtxUI() {
+    EventBus.subscribe('nodeSelected', (node) => {
+        updateNumCtxUI(node);
+    });
+}
+
+function setupNumPredictUI() {
+    EventBus.subscribe('nodeSelected', (node) => {
+        updateNumPredictUI(node);
+    });
+}
+
+function setupTopPUI() {
+    EventBus.subscribe('nodeSelected', (node) => {
+        updateTopPUI(node);
     });
 }
 
@@ -196,6 +220,7 @@ function addUiChatMessage(role, content) {
 
     var deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Delete';
+    deleteBtn.className = 'delete-btn';
     deleteBtn.addEventListener('click', function() {
         chatPrompts.removeChild(itemDiv);
     });
@@ -290,6 +315,27 @@ function updateTemperatureUI(node) {
 
     const temperatureInput = document.getElementById('temperature');
     temperatureInput.value = node.temperature || 0.0;
+}
+
+function updateTopPUI(node) {
+    if (!node) return;
+
+    const topInput = document.getElementById('top_p');
+    topInput.value = node.top_p || 0.0;
+}
+
+function updateNumCtxUI(node) {
+    if (!node) return;
+
+    const numInput = document.getElementById('num_ctx');
+    numInput.value = node.num_ctx || 0.0;
+}
+
+function updateNumPredictUI(node) { 
+    if (!node) return;
+
+    const numPredictInput = document.getElementById('num_predict');
+    numPredictInput.value = node.num_predict || 1;
 }
 
 function updateStopWordsUI(node) {

@@ -163,6 +163,18 @@ const VersionTreeService = {
                 isModified = true;
             }
 
+            if (data.top_p !== state.selectedNode.top_p) {
+                isModified = true;
+            }
+
+            if (data.num_ctx !== state.selectedNode.num_ctx) {
+                isModified = true;
+            }
+
+            if (data.num_predict !== state.selectedNode.num_predict) {
+                isModified = true;
+            }
+
             if (data.stopWords !== state.selectedNode.stopWords) {
                 isModified = true;
             }
@@ -179,6 +191,9 @@ const VersionTreeService = {
             model: data.model,
             messages: data.messages,
             temperature: data.temperature,
+            top_p: data.top_p,
+            num_ctx: data.num_ctx,
+            num_predict: data.num_predict,
             stopWords: data.stopWords,
             children: [],
             flagged: false,
@@ -305,6 +320,9 @@ const PromptServerService = {
             messages: compiledMessages,
             model: data.model,
             temperature: data.temperature,
+            top_p: data.top_p,
+            num_ctx: data.num_ctx,
+            num_predict: data.num_predict,
             stop: compiledStopWords
         };
 
@@ -383,6 +401,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupInvokeHistoryUI();
     setupModelsUI();
     setupTemperatureUI();
+    setupNumCtxUI();
+    setupNumPredictUI();
+    setupTopPUI();
     setupStopWordsUI();
 
     EventBus.subscribe('stateLoaded', () => {
@@ -394,6 +415,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateVariableUI();
         updateInvokeHistoryUI(state.selectedNode);
         updateTemperatureUI(state.selectedNode);
+        updateNumCtxUI(state.selectedNode);
+        updateNumPredictUI(state.selectedNode);
+        updateTopPUI(state.selectedNode);
         updateStopWordsUI(state.selectedNode);
         if (state.selectedNode) {
             selectModelUI(state.selectedNode.model);

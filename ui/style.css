@@ -33,6 +33,10 @@ body, html {
     overflow: auto;
 }
 
+.delete-btn{
+    margin-left: 70px;
+}
+
 #invoke-btn {
     display: block;
     width: 100%;

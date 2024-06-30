@@ -10,6 +10,8 @@ using OllamaSharp.Streamer;
 
 public class ModelInvoker : IModelInvoker
 {
+    private const int TimeoutMinutes = 20;
+
     private OllamaApiClient _ollama;
     private Task? _processingTask;
     private CancellationTokenSource? _cancellationTokenSource;
@@ -19,7 +21,10 @@ public class ModelInvoker : IModelInvoker
 
     public ModelInvoker(string ollamaApiUrl, int maxConcurrentInvocations)
     {
-        _ollama = new OllamaApiClient(ollamaApiUrl);
+        _ollama = new OllamaApiClient(new HttpClient() { 
+            BaseAddress = new Uri(ollamaApiUrl),
+            Timeout = TimeSpan.FromMinutes(TimeoutMinutes) 
+            });
         _modelSemaphore = new SemaphoreSlim(maxConcurrentInvocations);
     }
 
@@ -46,11 +51,7 @@ public class ModelInvoker : IModelInvoker
     public Task<string> InvokeModelAsync(InvokeRequest request)
     {
         var tcs = new TaskCompletionSource<string>();
-        var modelMessages = request.messages.Select(m => new ModelMessage(){
-            Role = m.role,
-            Content = m.content
-            }).ToArray(); 
-        var modelRequest = new ModelRequest(tcs, request.model, request.temperature, request.stop, modelMessages); // Use the converted array
+        var modelRequest = new ModelRequest(tcs, request); 
         _requestQueue.Enqueue(modelRequest);
         return tcs.Task;
     }
@@ -76,11 +77,14 @@ public class ModelInvoker : IModelInvoker
                         {
                             Temperature = request.Temperature,
                             Stop = request.Stop,
-                            // NumCtx = 8192
-                        }
+                            TopP = request.TopP,
+                            NumCtx = request.NumCtx,
+                            NumPredict = request.NumPredict
+                        },
+                        Stream = false
                     };
 
-                    var timeout = TimeSpan.FromMinutes(10);
+                    var timeout = TimeSpan.FromMinutes(TimeoutMinutes);
                     using var cts = new CancellationTokenSource(timeout);
                    
                     ConversationResponse? modelResponse = null;
@@ -88,9 +92,9 @@ public class ModelInvoker : IModelInvoker
                     {
                         modelResponse = await _ollama.SendChat(chatRequest, new ActionResponseStreamer<ChatResponseStream>(s => {}), cts.Token);
                     }
-                    catch (TaskCanceledException)
+                    catch (TaskCanceledException ex)
                     {
-                        modelResponse = new ConversationResponse(new Message{ Content = string.Empty, Role = string.Empty}, null);
+                        modelResponse = new ConversationResponse(new Message{ Content = "<timeout waiting for a response>", Role = string.Empty}, null);
                     }
 
                     request.CompletionSource.SetResult(modelResponse.Response.Content);
