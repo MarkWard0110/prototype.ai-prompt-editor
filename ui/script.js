@@ -85,30 +85,79 @@ const EventBus = {
     }
 };
 
+const dbName = 'promptApp';
+const dbVersion = 1;
+const storeName = 'stateStore';
+
 const StateService = {
+    db: null,
+    
     saveState() {
-        localStorage.setItem('promptAppState', JSON.stringify(state));
+        const db = this.db;
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.put({ id: 'promptAppState', state: state });
+
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
     },
 
     loadState() {
-        const savedState = localStorage.getItem('promptAppState');
-        if (savedState) {
-            state = JSON.parse(savedState);
-            EventBus.publish('stateLoaded', state);
-            
-            if (state.selectedNode) {
-                EventBus.publish('nodeSelected', state.selectedNode);
-            }
-        }
+        const db = this.db;
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.get('promptAppState');
+
+            request.onsuccess = (event) => {
+                const result = event.target.result;
+                if (result) {
+                    state = result.state;
+                    EventBus.publish('stateLoaded', state);
+
+                    if (state.selectedNode) {
+                        EventBus.publish('nodeSelected', state.selectedNode);
+                    }
+                }
+                resolve();
+            };
+
+            request.onerror = (event) => reject(event.target.error);
+        });
     },
 
-    initialize() {
-        this.loadState();
+    async initialize() {
+        await this.loadState();
     },
 
-    setup(){
-        EventBus.subscribe('stateChanged', this.saveState); 
-    }
+    async setup(){
+        this.db = await this.openDB();
+        EventBus.subscribe('stateChanged', this.saveState.bind(this));
+    },
+
+    async openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName, dbVersion);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName, { keyPath: 'id' });
+                }
+            };
+
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve(this.db);
+            };
+
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    },
 };
 
 const VariableService = {
@@ -387,14 +436,14 @@ function parseMessages(input) {
     return messages;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('system loading...');
     setupSplitter();
 
     const rpcClient = new JsonRpcWebSocketClient('ws://localhost:14900');
     PromptServerService.setup(rpcClient);
     AIModelService.setup(rpcClient);
-    StateService.setup();
+    await StateService.setup();
     setupPromptUI();
     setupVariableUI();
     setupVersionTreeUI();
@@ -463,6 +512,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
-    StateService.initialize();
+    await StateService.initialize();
 });
 
