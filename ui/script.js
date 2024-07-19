@@ -5,6 +5,15 @@ let state = {
     variables: {}
 };
 
+function newState() {
+    state = {
+        versionTree: [],
+        selectedNode: null,
+        selectedTimelineNode: null,
+        variables: {}
+    };
+}
+
 function generateUUID() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -128,6 +137,13 @@ const StateService = {
         });
     },
 
+    async deleteState() {
+        newState();
+        await this.saveState();
+        EventBus.publish('stateChanged', state);
+        EventBus.publish('nodeSelected', state.selectedNode);
+    },
+
     async initialize() {
         await this.loadState();
     },
@@ -137,7 +153,7 @@ const StateService = {
         EventBus.subscribe('stateChanged', this.saveState.bind(this));
     },
 
-    async openDB() {
+    openDB() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(dbName, dbVersion);
 
@@ -511,6 +527,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
     });
+
+    document.getElementById('new-session-btn').addEventListener('click', async function() {
+        await StateService.deleteState();
+    }
+    );
 
     await StateService.initialize();
 });
