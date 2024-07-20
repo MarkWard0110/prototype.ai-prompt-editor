@@ -1,18 +1,6 @@
-let state = {
-    versionTree: [],
-    selectedNode: null,
-    selectedTimelineNode: null,
-    variables: {}
-};
+let state = null;
 
-function newState() {
-    state = {
-        versionTree: [],
-        selectedNode: null,
-        selectedTimelineNode: null,
-        variables: {}
-    };
-}
+
 
 function generateUUID() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -101,6 +89,15 @@ const storeName = 'stateStore';
 const StateService = {
     db: null,
     
+    newState() {
+        state = {
+            versionTree: [],
+            selectedNode: null,
+            selectedTimelineNode: null,
+            variables: {}
+        };
+    },
+
     saveState() {
         const db = this.db;
         return new Promise((resolve, reject) => {
@@ -149,6 +146,7 @@ const StateService = {
     },
 
     async setup(){
+        this.newState();
         this.db = await this.openDB();
         EventBus.subscribe('stateChanged', this.saveState.bind(this));
     },
@@ -341,6 +339,32 @@ const VersionTreeService = {
 
             EventBus.publish('nodeSelected', node);
         }
+    },
+
+    getFlaggedNodes() {
+        let flaggedNodes = [];
+
+        function traverse(node) {
+          if (node.flagged) {
+            flaggedNodes.push(node);
+          }
+          if (node.children && node.children.length > 0) {
+            node.children.forEach(child => traverse(child));
+          }
+        }
+      
+        if (state.versionTree && state.versionTree.length > 0) {
+            state.versionTree.forEach(node => traverse(node)); 
+        }
+        return flaggedNodes;
+    },
+
+    extractFlaggedNodes() {
+        const flaggedNodes = this.getFlaggedNodes();
+        StateService.newState();
+        state.versionTree = flaggedNodes;
+        EventBus.publish('stateChanged');
+        EventBus.publish('nodeSelected', state.selectedNode);
     }
 };
 
@@ -532,6 +556,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await StateService.deleteState();
     }
     );
+
+    document.getElementById('extract-flagged-btn').addEventListener('click', function() {
+        VersionTreeService.extractFlaggedNodes();
+    });
 
     await StateService.initialize();
 });

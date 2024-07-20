@@ -79,7 +79,9 @@ function setupModelsUI() {
         updateModelsUI(models);
     });
     EventBus.subscribe('nodeSelected', (node) => {
+        if (node) {
         selectModelUI(node.model);
+        }
     });
 }
 
