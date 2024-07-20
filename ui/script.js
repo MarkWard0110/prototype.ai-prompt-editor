@@ -362,6 +362,12 @@ const VersionTreeService = {
     extractFlaggedNodes() {
         const flaggedNodes = this.getFlaggedNodes();
         StateService.newState();
+        flaggedNodes.forEach(node => {
+            node.children = [];
+            node.previousVersionId = null;
+            node.isHead = false;
+        });
+
         state.versionTree = flaggedNodes;
         EventBus.publish('stateChanged');
         EventBus.publish('nodeSelected', state.selectedNode);
