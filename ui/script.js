@@ -135,7 +135,7 @@ const StateService = {
     },
 
     async deleteState() {
-        newState();
+        this.newState();
         await this.saveState();
         EventBus.publish('stateChanged', state);
         EventBus.publish('nodeSelected', state.selectedNode);
