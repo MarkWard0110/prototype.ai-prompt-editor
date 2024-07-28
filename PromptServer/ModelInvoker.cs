@@ -1,18 +1,15 @@
+using BAIsic.LlmApi.Ollama;
 using System;
 using System.Collections.Concurrent;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using System.Threading.Tasks;
-using OllamaSharp;
-using OllamaSharp.Models;
-using OllamaSharp.Models.Chat;
-using OllamaSharp.Streamer;
 
 public class ModelInvoker : IModelInvoker
 {
     private const int TimeoutMinutes = 20;
 
-    private OllamaApiClient _ollama;
+    private OllamaClient _ollama;
     private Task? _processingTask;
     private CancellationTokenSource? _cancellationTokenSource;
 
@@ -21,7 +18,7 @@ public class ModelInvoker : IModelInvoker
 
     public ModelInvoker(string ollamaApiUrl, int maxConcurrentInvocations)
     {
-        _ollama = new OllamaApiClient(new HttpClient() { 
+        _ollama = new OllamaClient(new HttpClient() { 
             BaseAddress = new Uri(ollamaApiUrl),
             Timeout = TimeSpan.FromMinutes(TimeoutMinutes) 
             });
@@ -87,17 +84,23 @@ public class ModelInvoker : IModelInvoker
                     var timeout = TimeSpan.FromMinutes(TimeoutMinutes);
                     using var cts = new CancellationTokenSource(timeout);
                    
-                    ConversationResponse? modelResponse = null;
+                    ChatResponse? modelResponse = null;
                     try
                     {
-                        modelResponse = await _ollama.SendChat(chatRequest, new ActionResponseStreamer<ChatResponseStream>(s => {}), cts.Token);
+                        modelResponse = await _ollama.InvokeChatCompletionAsync(chatRequest, cancellationToken: cts.Token);
                     }
                     catch (TaskCanceledException ex)
                     {
-                        modelResponse = new ConversationResponse(new Message{ Content = "<timeout waiting for a response>", Role = string.Empty}, null);
+                        modelResponse = new ChatResponse()
+                        {
+                            Message = new Message()
+                            {
+                                Content = "<timeout waiting for a response>", Role = string.Empty
+                            }                            
+                        };
                     }
 
-                    request.CompletionSource.SetResult(modelResponse.Response.Content);
+                    request.CompletionSource.SetResult(modelResponse.Message!.Content);
                 }
                 catch (Exception ex)
                 {
@@ -110,7 +113,7 @@ public class ModelInvoker : IModelInvoker
             }
             else
             {
-                await Task.Delay(100); // Prevent spinning if the queue is empty
+                await Task.Delay(500); // Prevent spinning if the queue is empty
             }
         }
     }

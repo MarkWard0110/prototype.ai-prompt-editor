@@ -1,0 +1,3 @@
+[submodule "bAIsic"]
+	path = bAIsic
+	url = git@github.com:MarkWard0110/bAIsic.git

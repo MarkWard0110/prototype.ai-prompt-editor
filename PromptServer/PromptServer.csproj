@@ -8,9 +8,15 @@
   </PropertyGroup>
 
 <ItemGroup>
-  <PackageReference Include="Microsoft.AspNetCore.App" />
-  <PackageReference Include="OllamaSharp" Version="1.1002.3" />
+  <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+  <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
+  <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.1" />
+  <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
   <PackageReference Include="StreamJsonRpc" Version="2.17.11" />
+</ItemGroup>
+
+<ItemGroup>
+  <ProjectReference Include="..\bAIsic\src\BAIsic.LlmApi.Ollama\BAIsic.LlmApi.Ollama.csproj" />
 </ItemGroup>
 
   <ItemGroup>
