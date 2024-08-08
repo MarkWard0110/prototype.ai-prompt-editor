@@ -1,69 +1,9 @@
 let state = null;
 
-
-
 function generateUUID() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
-}
-
-class JsonRpcWebSocketClient {
-    constructor(url) {
-        this.url = url;
-        this.socket = new WebSocket(url);
-        this.pendingRequests = {};
-        this.isOpen = false;
-        this.socket.onopen = () => {
-            console.log("WebSocket connection established.");
-            this.isOpen = true;
-            EventBus.publish('jsonRpcConnected');
-        };
-
-        this.socket.onmessage = (event) => {
-            const response = JSON.parse(event.data);
-            console.log("Received from server:", response);
-            
-            if (response.id && this.pendingRequests[response.id]) {
-                this.pendingRequests[response.id].resolve(response.result);
-                delete this.pendingRequests[response.id];
-            }
-        };
-
-        this.socket.onerror = (event) => {
-            console.error("WebSocket error observed:", event);
-        };
-    }
-
-    invokeModel(invokeRequest) {
-        return new Promise((resolve, reject) => {
-            const requestId = generateUUID();
-            this.pendingRequests[requestId] = { resolve, reject };
-            
-            const request = {
-                jsonrpc: "2.0",
-                method: "InvokeModel",
-                params: [invokeRequest],
-                id: requestId
-            };
-            this.socket.send(JSON.stringify(request));
-        });
-    }
-
-    listModels() {
-        return new Promise((resolve, reject) => {
-            const requestId = generateUUID();
-            this.pendingRequests[requestId] = { resolve, reject };
-            
-            const request = {
-                jsonrpc: "2.0",
-                method: "ListModels",
-                params: [],
-                id: requestId
-            };
-            this.socket.send(JSON.stringify(request));
-        });
-    }
 }
 
 const EventBus = {
@@ -376,34 +316,20 @@ const VersionTreeService = {
 
 const AIModelService = {
     models: [],
-    rpcClient: null,
 
-    setup(rpcClient){
-        this.rpcClient = rpcClient;
-
-        if (this.rpcClient.isOpen) {
-            this.initialize();
-        }
-
-        EventBus.subscribe('jsonRpcConnected', () => {
-            AIModelService.initialize();
-        });
+    setup() {
+        this.initialize();
     },
     initialize() {
         this.fetchModels();
     },
     async fetchModels() {
-        this.models = await this.rpcClient.listModels();
+        this.models = await getModelList();
         EventBus.publish('aiModelListChanged', this.models);
     },
 };
 
 const PromptServerService = {
-    rpcClient: null,
-
-    setup(rpcClient){
-        this.rpcClient = rpcClient;
-    },
 
     async invoke(data) {
         console.log('Invoking prompt...');
@@ -432,22 +358,12 @@ const PromptServerService = {
         data.invokeHistory.push(invokeEntry);
         EventBus.publish('stateChanged');
 
-        const result = await this.rpcClient.invokeModel(invokeRequest);
+        const result = await invokeModel(invokeRequest);
         invokeEntry.response = result;
         invokeEntry.hasResponse = true;
         invokeEntry.responseTimestamp = new Date().toUTCString();
 
         EventBus.publish('stateChanged');
-    },
-
-    
-    invokeResponse(correlationId, responseText) {
-        if (this.pendingInvocations[correlationId]) {
-            this.pendingInvocations[correlationId].response = responseText;
-            delete this.pendingInvocations[correlationId]; // Clean up after updating
-            EventBus.publish('stateChanged');
-            
-        }
     },
 };
 
@@ -482,13 +398,11 @@ function parseMessages(input) {
     return messages;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initApp() {
     console.log('system loading...');
     setupSplitter();
 
-    const rpcClient = new JsonRpcWebSocketClient('ws://localhost:14900');
-    PromptServerService.setup(rpcClient);
-    AIModelService.setup(rpcClient);
+    AIModelService.setup();
     await StateService.setup();
     setupPromptUI();
     setupVariableUI();
@@ -545,8 +459,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('add-message-btn').addEventListener('click', function() {
         addUiChatMessage('','');
     });
-
-    
+        
     document.getElementById('load-chat-btn').addEventListener('click', function() {
         const messages = parseMessages(document.getElementById('load-chat-value').value)
         
@@ -568,5 +481,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     await StateService.initialize();
-});
+}
 

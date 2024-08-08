@@ -142,9 +142,14 @@ function updateInvokeHistoryUI() {
 
     if (state.selectedNode) {
         state.selectedNode.invokeHistory.forEach((invokeItem, index) => {
-            responseText = invokeItem.hasResponse ? invokeItem.response : '[waiting...]';
-            responseDuration = invokeItem.responseTimestamp ? (new Date(invokeItem.responseTimestamp) - new Date(invokeItem.requestTimestamp)) / 1000 : '';
-
+            if (invokeItem.hasResponse) {
+                responseText = invokeItem.response.message.content;
+                responseDuration = invokeItem.response.total_duration ? invokeItem.response.total_duration / 1000000000 : '';
+            } else {
+                responseText = '[waiting...]';
+                responseDuration = "";
+            }
+            
             invokeResponse.value += `
 ---------------------------------------------------------------------
 Invoke ${index + 1}:
