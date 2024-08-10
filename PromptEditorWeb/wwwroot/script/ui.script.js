@@ -142,19 +142,21 @@ function updateInvokeHistoryUI() {
 
     if (state.selectedNode) {
         state.selectedNode.invokeHistory.forEach((invokeItem, index) => {
+
+            var responseText = '[waiting...]';
+            var responseDuration = "";
+            var tokensPerSecond = "";
+
             if (invokeItem.hasResponse) {
                 responseText = invokeItem.response.message.content;
-                responseDuration = invokeItem.response.total_duration ? invokeItem.response.total_duration / 1000000000 : '';
-            } else {
-                responseText = '[waiting...]';
-                responseDuration = "";
-            }
+                responseDuration = 's:' + (invokeItem.response.total_duration ? invokeItem.response.total_duration / 1000000000 : '');
+                tokensPerSecond = 'tps:' + (invokeItem.response.eval_count < 0 ? '' : invokeItem.response.eval_count / (invokeItem.response.eval_duration / 1e9));
+            } 
             
             invokeResponse.value += `
 ---------------------------------------------------------------------
 Invoke ${index + 1}:
-
-RESPONSE:(${responseDuration}s)
+RESPONSE:(${responseDuration} ${tokensPerSecond})
 
 ${responseText}\n\n`;
         });
