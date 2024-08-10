@@ -211,8 +211,9 @@ function updateVersionTreeUI() {
     renderNodes(state.versionTree, versionTreeContainer);
 }
 
-function addUiChatMessage(role, content) {
+function newChatMessage(role, content) {
     var itemDiv = document.createElement('div');
+    itemDiv.className = 'chat-prompt';
 
     var roleInput = document.createElement('input');
     roleInput.type = 'text';
@@ -220,6 +221,7 @@ function addUiChatMessage(role, content) {
     roleInput.value = role;
 
     var roleLabel = document.createElement('label');
+    roleLabel.className = 'role-style';
     roleLabel.textContent = 'role';
 
     var contentInput = document.createElement('textarea');
@@ -230,15 +232,31 @@ function addUiChatMessage(role, content) {
     var deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Delete';
     deleteBtn.className = 'delete-btn';
-    deleteBtn.addEventListener('click', function() {
+    deleteBtn.addEventListener('click', function () {
         chatPrompts.removeChild(itemDiv);
+    });
+
+    var insertMessageBtn = document.createElement('button');
+    insertMessageBtn.textContent = 'Insert Message';
+    insertMessageBtn.className = 'insert-btn';
+    insertMessageBtn.addEventListener('click', function () {
+        var newMessage = newChatMessage('', '');
+        var chatPrompts = document.getElementById('chat-prompts');
+        chatPrompts.insertBefore(newMessage, itemDiv);
     });
 
     itemDiv.appendChild(roleInput);
     itemDiv.appendChild(roleLabel);
+    itemDiv.appendChild(insertMessageBtn);
     itemDiv.appendChild(deleteBtn);
     itemDiv.appendChild(contentInput);
-    
+
+    return itemDiv;
+}
+function addUiChatMessage(role, content) {
+
+    var itemDiv = newChatMessage(role, content);
+
     var chatPrompts = document.getElementById('chat-prompts');
     chatPrompts.appendChild(itemDiv);
 }
