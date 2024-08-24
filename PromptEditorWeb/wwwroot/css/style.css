@@ -37,6 +37,18 @@ body, html {
     cursor: pointer;
 }
 
+#save-btn {
+    margin-bottom: 20px;
+}
+
+#extract-flagged-btn {
+    margin-bottom: 20px;
+}
+
+#toggle-advanced{
+    margin-bottom: 20px;
+}
+
 #revision-history {
     margin-top: 20px;
     font-size: clamp(12px, 1vw, 14px);

@@ -66,6 +66,11 @@ function setupPromptUI() {
         promptModify();
         PromptServerService.invoke(state.selectedNode); // selectedNode is updated in promptModify via VersionTreeService.addNode
     });
+
+
+    document.getElementById('save-btn').addEventListener('click', () => {
+        promptModify();
+    });
 }
 
 function setupInvokeHistoryUI() {
@@ -186,6 +191,11 @@ function updateVersionTreeUI() {
                 VersionTreeService.selectNode(node.id);
             });
 
+            nodeElement.addEventListener('dblclick', () => {
+                VersionTreeService.selectNode(node.id);
+                toggleFlag();
+            });
+
             if (node.children.length > 0) {
                 const childContainer = document.createElement('div');
                 childContainer.style.paddingLeft = '20px';
@@ -233,6 +243,7 @@ function newChatMessage(role, content) {
     deleteBtn.textContent = 'Delete';
     deleteBtn.className = 'delete-btn';
     deleteBtn.addEventListener('click', function () {
+        var chatPrompts = document.getElementById('chat-prompts');
         chatPrompts.removeChild(itemDiv);
     });
 
@@ -277,10 +288,17 @@ function setVersionTreeUI(node) {
         addUiChatMessage(message.role, message.content);
     });
 
-    const flagBtn = document.getElementById('flag-prompt-btn');
-    flagBtn.textContent = node.flagged ? 'Unflag Prompt' : 'Flag Prompt';
-
     updateVersionTreeUI();
+}
+
+function toggleFlag() {
+    if (state.selectedNode) {
+        if (state.selectedNode.flagged) {
+            VersionTreeService.unflagNode(state.selectedNode.id);
+        } else {
+            VersionTreeService.flagNode(state.selectedNode.id);
+        }
+    }
 }
 
 function updateVariableUI() {

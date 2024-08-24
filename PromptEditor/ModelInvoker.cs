@@ -83,7 +83,8 @@ namespace PromptEditor
                                 NumCtx = request.NumCtx,
                                 NumPredict = request.NumPredict
                             },
-                            Stream = false
+                            Stream = false,
+                            //KeepAlive = -1,
                         };
 
                         var timeout = TimeSpan.FromMinutes(TimeoutMinutes);

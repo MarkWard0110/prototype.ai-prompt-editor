@@ -375,6 +375,7 @@ function getStopWords(stopWords) {
 
 function parseMessages(input) {
     input = input.replace(/\\n/g, '\n');
+    input = input.replace(/\\r/g, '');
     const sections = input.split('<|eot_id|>');
     const messages = [];
 
@@ -430,18 +431,6 @@ async function initApp() {
         updateStopWordsUI(state.selectedNode);
         if (state.selectedNode) {
             selectModelUI(state.selectedNode.model);
-        }
-    });
-
-    document.getElementById('flag-prompt-btn').addEventListener('click', () => {
-        if (state.selectedNode) {
-            if (state.selectedNode.flagged) {
-                VersionTreeService.unflagNode(state.selectedNode.id);
-                document.getElementById('flag-prompt-btn').textContent = 'Flag Prompt';
-            } else {
-                VersionTreeService.flagNode(state.selectedNode.id);
-                document.getElementById('flag-prompt-btn').textContent = 'Unflag Prompt';
-            }
         }
     });
     
