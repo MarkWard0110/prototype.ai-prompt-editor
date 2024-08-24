@@ -84,7 +84,7 @@ namespace PromptEditor
                                 NumPredict = request.NumPredict
                             },
                             Stream = false,
-                            //KeepAlive = -1,
+                            KeepAlive = -1,
                         };
 
                         var timeout = TimeSpan.FromMinutes(TimeoutMinutes);
