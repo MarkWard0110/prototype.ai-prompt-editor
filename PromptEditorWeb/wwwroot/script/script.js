@@ -399,6 +399,24 @@ function parseMessages(input) {
     return messages;
 }
 
+function findAllBenchmarkMessages(jsonString) {
+    const jsonObject = JSON.parse(jsonString);
+    const messagesArray = [];
+
+    function recursiveSearch(obj) {
+        for (const key in obj) {
+            if (key === "Messages" && Array.isArray(obj[key])) {
+                messagesArray.push(obj[key]);
+            } else if (typeof obj[key] === "object" && obj[key] !== null) {
+                recursiveSearch(obj[key]);
+            }
+        }
+    }
+
+    recursiveSearch(jsonObject);
+    return messagesArray;
+}
+
 async function initApp() {
     console.log('system loading...');
     setupSplitter();
@@ -449,13 +467,26 @@ async function initApp() {
         addUiChatMessage('','');
     });
         
-    document.getElementById('load-chat-btn').addEventListener('click', function() {
-        const messages = parseMessages(document.getElementById('load-chat-value').value)
+    document.getElementById('load-llama-prompt-btn').addEventListener('click', function() {
+        const messages = parseMessages(document.getElementById('load-llama-prompt-value').value)
         
         clearChatPrompts();
 
         messages.forEach(message => {
             addUiChatMessage(message.role, message.content);
+        });
+
+    });
+
+    document.getElementById('load-messages-btn').addEventListener('click', function () {
+        const messageGroup = findAllBenchmarkMessages(document.getElementById('load-messages-value').value)
+
+        messageGroup.forEach(messages => {
+            clearChatPrompts();
+            messages.forEach(message => {
+                addUiChatMessage(message.Role, message.Text);
+            });
+            promptModify();
         });
 
     });

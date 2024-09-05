@@ -47,12 +47,20 @@
                     <input type="number" id="num_predict" name="num_predict" min="-2" value="-1">
                 </div>
                 <div>
-                    <button id="load-chat-btn">Load Chat</button>
-                    <textarea id="load-chat-value" placeholder=""></textarea>
+                    <h4>Import Messages</h4>
+                    <textarea id="load-messages-value" placeholder="Messages JSON"></textarea>
+                    <button id="load-messages-btn">Load Messages</button>
+                </div>
+                <div>
+                    <h4>Import Llama Prompt</h4>
+                    <textarea id="load-llama-prompt-value" placeholder="Ollama Llama prompt"></textarea>
+                    <button id="load-llama-prompt-btn">Load Prompt</button>
                 </div>
             </div>
         </div>
-        <div><button id="new-session-btn">New Session</button></div>
+        <div>
+            <h4>Session</h4>
+            <button id="new-session-btn">New Session</button></div>
     </div>
     <div class="gutter gutter-vertical"></div>
     <div id="prompt" class="split">
