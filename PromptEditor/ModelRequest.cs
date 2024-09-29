@@ -5,23 +5,15 @@ namespace PromptEditor
 {
     class ModelRequest
     {
-        public TaskCompletionSource<ChatResponse> CompletionSource { get; }
+        public TaskCompletionSource<InvokeResponse> CompletionSource { get; }
 
         public string Model { get; }
 
         public ModelMessage[] Messages { get; }
 
-        public float Temperature { get; }
+        public RequestOptions RequestOptions { get; }
 
-        public string[] Stop { get; }
-
-        public float TopP { get; }
-
-        public int NumCtx { get; }
-
-        public int NumPredict { get; }
-
-        public ModelRequest(TaskCompletionSource<ChatResponse> completionSource, InvokeRequest invokeRequest)
+        public ModelRequest(TaskCompletionSource<InvokeResponse> completionSource, InvokeRequest invokeRequest)
         {
             CompletionSource = completionSource;
             var modelMessages = invokeRequest.messages.Select(m => new ModelMessage()
@@ -31,11 +23,8 @@ namespace PromptEditor
             }).ToArray();
 
             Model = invokeRequest.model;
-            Temperature = invokeRequest.temperature;
-            Stop = invokeRequest.stop;
-            TopP = invokeRequest.top_p;
-            NumCtx = invokeRequest.num_ctx;
-            NumPredict = invokeRequest.num_predict;
+            RequestOptions = invokeRequest.requestOptions;
+            
             Messages = modelMessages;
         }
     }

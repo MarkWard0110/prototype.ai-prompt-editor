@@ -30,48 +30,60 @@
             </ul>
         </div>
         <div><button id="extract-flagged-btn">Extract Flagged Nodes</button></div>
-        <div id="advanced-area">
-            <button id="toggle-advanced">Show Advanced Options</button>
-            <div id="advanced-prompt-options" style="display: none;">
-                <div>
-                    <label for="stop-word-list">Stop Words:</label>
-                    <input type="text" id="stop-word-list" placeholder="(default)" />
-                </div>
-                <div>
-                    <label for"num_ctx">Context Size:</label>
-                    <input type="number" id="num_ctx" name="num_ctx" min="1" value="2048">
-                </div>
-                <div>
-                    <label for="num_predict">Predict Size:</label>
-                    <!-- Maximum number of tokens to predict when generating text. (Default: 128, -1 = infinite generation, -2 = fill context) -->
-                    <input type="number" id="num_predict" name="num_predict" min="-2" value="-1">
-                </div>
-                <div>
-                    <h4>Import Messages</h4>
-                    <textarea id="load-messages-value" placeholder="Messages JSON"></textarea>
-                    <button id="load-messages-btn">Load Messages</button>
-                </div>
-                <div>
-                    <h4>Import Llama Prompt</h4>
-                    <textarea id="load-llama-prompt-value" placeholder="Ollama Llama prompt"></textarea>
-                    <button id="load-llama-prompt-btn">Load Prompt</button>
-                </div>
-            </div>
-        </div>
         <div>
             <h4>Session</h4>
-            <button id="new-session-btn">New Session</button></div>
+            <button id="new-session-btn">New Session</button>
+        </div>
+
+        <div>
+            <h4>Import Messages</h4>
+            <textarea id="load-messages-value" placeholder="Messages JSON"></textarea>
+            <button id="load-messages-btn">Load Messages</button>
+        </div>
+        <div>
+            <h4>Import Llama Prompt</h4>
+            <textarea id="load-llama-prompt-value" placeholder="Ollama Llama prompt"></textarea>
+            <button id="load-llama-prompt-btn">Load Prompt</button>
+        </div>
     </div>
     <div class="gutter gutter-vertical"></div>
     <div id="prompt" class="split">
         <div id="prompt-options">
-            <label for="ai-model">AI Model:</label>
-            <select id="ai-model">
-            </select>
-            <label for="temperature">Temperature:</label>
-            <input type="number" id="temperature" name="temperature" min="0.0" max="1.0" step="0.01" value="0.0">
-            <label for="top_p">Top P:</label>
-            <input type="number" id="top_p" name="top_p" min="0.0" max="1.0" step="0.01" value="0.0">
+            <div>
+                <label for="ai-model">AI Model:</label>
+                <select id="ai-model">
+                </select>
+            </div>
+            <div class="request-options">
+                <label for="temperature">Temperature:</label>
+                <input type="number" id="temperature" name="temperature" min="0.0" max="1.0" step="0.1" value="0.0">
+            </div>
+            <div class="request-options">
+                <label for="top_p">Top P:</label>
+                <input type="number" id="top_p" name="top_p" min="0.0" max="1.0" step="0.1" value="0.0">
+            </div>
+            <div class="request-options">
+                <label for"num_ctx">Context Size:</label>
+                <input type="number" id="num_ctx" name="num_ctx" min="1" value="2048">
+            </div>
+            <div id="advanced-area">
+                <button id="toggle-advanced">Show Advanced Options</button>
+                <div id="advanced-prompt-options" style="display: none;">
+                    <div class="request-options">
+                        <label for="seed">Seed:</label>
+                        <input type="text" id="seed" placeholder="(default)" />
+                    </div>
+                    <div class="request-options">
+                        <label for="stop-word-list">Stop Words:</label>
+                        <input type="text" id="stop-word-list" placeholder="(default)" />
+                    </div>
+                    <div class="request-options">
+                        <label for="num_predict">Predict Size:</label>
+                        <!-- Maximum number of tokens to predict when generating text. (Default: 128, -1 = infinite generation, -2 = fill context) -->
+                        <input type="number" id="num_predict" name="num_predict" min="-2" value="-1">
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="chat-prompts">
         </div>
@@ -106,7 +118,7 @@
     }
 
     [JSInvokable]
-    public async Task<ChatResponse> InvokeModelAsync(InvokeRequest request)
+    public async Task<InvokeResponse> InvokeModelAsync(InvokeRequest request)
     {
         try
         {
@@ -117,14 +129,17 @@
         {
             Console.WriteLine(ex.Message);
         }
-        return new ChatResponse()
+        return new InvokeResponse(){
+            chatResponse = new ChatResponse()
             {
                 Message = new Message()
                 {
                     Role = "AI",
                     Content = "An error occurred while invoking the model."
                 }
-            };
+            },
+            requestOptions = new RequestOptions()
+        };
     }
 
     [JSInvokable]

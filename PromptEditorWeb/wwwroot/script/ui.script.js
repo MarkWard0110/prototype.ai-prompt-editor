@@ -45,17 +45,21 @@ function promptModify() {
     const temperature = parseFloat(document.getElementById('temperature').value);
     const num_ctx = parseFloat(document.getElementById('num_ctx').value);
     const top_p = parseFloat(document.getElementById('top_p').value);
+    const seed = document.getElementById('seed').value !== '' ? parseFloat(document.getElementById('seed').value) : null;
     const num_predict = parseFloat(document.getElementById('num_predict').value);
     const stopWords = document.getElementById('stop-word-list').value !== '' ? document.getElementById('stop-word-list').value : null;
 
     node = {
         messages: messages,
         model: model,
-        temperature: temperature,
-        top_p: top_p,
-        num_ctx: num_ctx,
-        num_predict: num_predict,
-        stopWords: stopWords
+        requestOptions: {
+            temperature: temperature,
+            top_p: top_p,
+            num_ctx: num_ctx,
+            seed: seed,
+            num_predict: num_predict,
+            stopWords: stopWords
+        }
     };
 
     VersionTreeService.addNode(node);
@@ -90,36 +94,11 @@ function setupModelsUI() {
     });
 }
 
-function setupTemperatureUI() {
+function setupRequestOptionsUI() {
     EventBus.subscribe('nodeSelected', (node) => {
-        updateTemperatureUI(node);
+        updateRequestOptionsUI(node);
     });
 }
-
-function setupNumCtxUI() {
-    EventBus.subscribe('nodeSelected', (node) => {
-        updateNumCtxUI(node);
-    });
-}
-
-function setupNumPredictUI() {
-    EventBus.subscribe('nodeSelected', (node) => {
-        updateNumPredictUI(node);
-    });
-}
-
-function setupTopPUI() {
-    EventBus.subscribe('nodeSelected', (node) => {
-        updateTopPUI(node);
-    });
-}
-
-function setupStopWordsUI() {
-    EventBus.subscribe('nodeSelected', (node) => {
-        updateStopWordsUI(node);
-    });
-}
-
 
 function getEditorMessages() {
     var chatPrompts = document.getElementById('chat-prompts');
@@ -151,17 +130,19 @@ function updateInvokeHistoryUI() {
             var responseText = '[waiting...]';
             var responseDuration = "";
             var tokensPerSecond = "";
+            var seed = "";
 
             if (invokeItem.hasResponse) {
-                responseText = invokeItem.response.message.content;
-                responseDuration = 's:' + (invokeItem.response.total_duration ? invokeItem.response.total_duration / 1000000000 : '');
-                tokensPerSecond = 'tps:' + (invokeItem.response.eval_count < 0 ? '' : invokeItem.response.eval_count / (invokeItem.response.eval_duration / 1e9));
+                responseText = invokeItem.response.chatResponse.message.content;
+                responseDuration = 's:' + (invokeItem.response.chatResponse.total_duration ? invokeItem.response.chatResponse.total_duration / 1000000000 : '');
+                tokensPerSecond = 'tps:' + (invokeItem.response.chatResponse.eval_count < 0 ? '' : invokeItem.response.chatResponse.eval_count / (invokeItem.response.chatResponse.eval_duration / 1e9));
+                seed = 'seed:' + (invokeItem.response.requestOptions.seed ? invokeItem.response.requestOptions.seed : '');
             } 
             
             invokeResponse.value += `
 ---------------------------------------------------------------------
 Invoke ${index + 1}:
-RESPONSE:(${responseDuration} ${tokensPerSecond})
+RESPONSE:(${responseDuration} ${tokensPerSecond} ${seed})
 
 ${responseText}\n\n`;
         });
@@ -354,39 +335,21 @@ function updateModelsUI(models) {
     }
 }
 
-
-function updateTemperatureUI(node) {
+function updateRequestOptionsUI(node) {
     if (!node) return;
 
-    const temperatureInput = document.getElementById('temperature');
-    temperatureInput.value = node.temperature || 0.0;
+    updateRequestOptions(node.requestOptions);
 }
 
-function updateTopPUI(node) {
-    if (!node) return;
+function updateRequestOptions(requestOptions) {
+    if (!requestOptions) return;
 
-    const topInput = document.getElementById('top_p');
-    topInput.value = node.top_p || 0.0;
-}
-
-function updateNumCtxUI(node) {
-    if (!node) return;
-
-    const numInput = document.getElementById('num_ctx');
-    numInput.value = node.num_ctx || 0.0;
-}
-
-function updateNumPredictUI(node) { 
-    if (!node) return;
-
-    const numPredictInput = document.getElementById('num_predict');
-    numPredictInput.value = node.num_predict || 1;
-}
-
-function updateStopWordsUI(node) {
-    if (!node) return;
-
-    document.getElementById('stop-word-list').value  = node.stopWords || '';
+    document.getElementById('temperature').value = requestOptions.temperature || 0.0;
+    document.getElementById('top_p').value = requestOptions.top_p || 0.0;
+    document.getElementById('seed').value = requestOptions.seed || '';
+    document.getElementById('num_ctx').value = requestOptions.num_ctx || 2048;
+    document.getElementById('num_predict').value = requestOptions.num_predict || -1;
+    document.getElementById('stop-word-list').value = requestOptions.stopWords || '';
 }
 
 function selectModelUI(modelName) {
@@ -394,4 +357,85 @@ function selectModelUI(modelName) {
 
     const modelSelect = document.getElementById('ai-model');
     modelSelect.value = modelName;
+}
+
+function setupUI() {
+    setupPromptUI();
+    setupVariableUI();
+    setupVersionTreeUI();
+    setupInvokeHistoryUI();
+    setupModelsUI();
+
+    setupRequestOptionsUI();
+    
+
+    EventBus.subscribe('stateLoaded', () => {
+        updateVersionTreeUI();
+        updateVariableUI();
+    });
+    EventBus.subscribe('stateChanged', () => {
+        updateVersionTreeUI();
+        updateVariableUI();               
+        updateInvokeHistoryUI(state.selectedNode);
+        updateRequestOptionsUI(state.selectedNode);
+
+        if (state.selectedNode) {
+            selectModelUI(state.selectedNode.model);
+        }
+    });
+
+    document.getElementById('toggle-advanced').addEventListener('click', function () {
+        var advancedArea = document.getElementById('advanced-prompt-options');
+        if (advancedArea.style.display === 'none') {
+            advancedArea.style.display = 'block';
+            this.textContent = 'Hide Advanced Options';
+        } else {
+            advancedArea.style.display = 'none';
+            this.textContent = 'Show Advanced Options';
+        }
+    });
+
+    document.getElementById('add-message-btn').addEventListener('click', function () {
+        addUiChatMessage('', '');
+    });
+
+    document.getElementById('load-llama-prompt-btn').addEventListener('click', function () {
+        const messages = parseMessages(document.getElementById('load-llama-prompt-value').value)
+
+        clearChatPrompts();
+
+        messages.forEach(message => {
+            addUiChatMessage(message.role, message.content);
+        });
+
+    });
+
+    document.getElementById('load-messages-btn').addEventListener('click', function () {
+        const jsonObject = JSON.parse(document.getElementById('load-messages-value').value);
+        const messageGroup = findAllBenchmarkMessages(jsonObject)
+        const requestOptions = findRequestOptions(jsonObject);
+        const model = findModel(jsonObject);
+
+        messageGroup.forEach(messages => {
+            clearChatPrompts();
+            messages.forEach(message => {
+                addUiChatMessage(message.Role, message.Text);
+            });
+            updateRequestOptions(requestOptions);
+            selectModelUI(model);
+            promptModify(); // save
+        });
+
+        
+        
+    });
+
+    document.getElementById('new-session-btn').addEventListener('click', async function () {
+        await StateService.deleteState();
+    }
+    );
+
+    document.getElementById('extract-flagged-btn').addEventListener('click', function () {
+        VersionTreeService.extractFlaggedNodes();
+    });
 }

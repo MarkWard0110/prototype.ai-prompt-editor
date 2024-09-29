@@ -162,23 +162,27 @@ const VersionTreeService = {
                 isModified = true;
             }
 
-            if (data.temperature !== state.selectedNode.temperature) {
+            if (data.requestOptions.temperature !== state.selectedNode.requestOptions.temperature) {
                 isModified = true;
             }
 
-            if (data.top_p !== state.selectedNode.top_p) {
+            if (data.requestOptions.top_p !== state.selectedNode.requestOptions.top_p) {
                 isModified = true;
             }
 
-            if (data.num_ctx !== state.selectedNode.num_ctx) {
+            if (data.requestOptions.num_ctx !== state.selectedNode.requestOptions.num_ctx) {
                 isModified = true;
             }
 
-            if (data.num_predict !== state.selectedNode.num_predict) {
+            if (data.requestOptions.seed !== state.selectedNode.requestOptions.seed) {
                 isModified = true;
             }
 
-            if (data.stopWords !== state.selectedNode.stopWords) {
+            if (data.requestOptions.num_predict !== state.selectedNode.requestOptions.num_predict) {
+                isModified = true;
+            }
+
+            if (data.requestOptions.stopWords !== state.selectedNode.requestOptions.stopWords) {
                 isModified = true;
             }
         }
@@ -193,11 +197,14 @@ const VersionTreeService = {
             title: new Date().toLocaleString(),
             model: data.model,
             messages: data.messages,
-            temperature: data.temperature,
-            top_p: data.top_p,
-            num_ctx: data.num_ctx,
-            num_predict: data.num_predict,
-            stopWords: data.stopWords,
+            requestOptions: {
+                temperature: data.requestOptions.temperature,
+                top_p: data.requestOptions.top_p,
+                num_ctx: data.requestOptions.num_ctx,
+                seed: data.requestOptions.seed,
+                num_predict: data.requestOptions.num_predict,
+                stopWords: data.requestOptions.stopWords,
+            },
             children: [],
             flagged: false,
             invokeHistory: [],
@@ -335,16 +342,19 @@ const PromptServerService = {
         console.log('Invoking prompt...');
 
         const compiledMessages = data.messages.map(message => ({ role: message.role, content: VariableService.replaceVariablesInPrompt(message.content) }));
-        const compiledStopWords = getStopWords(data.stopWords);
+        const compiledStopWords = getStopWords(data.requestOptions.stopWords);
 
         const invokeRequest = {
             messages: compiledMessages,
             model: data.model,
-            temperature: data.temperature,
-            top_p: data.top_p,
-            num_ctx: data.num_ctx,
-            num_predict: data.num_predict,
-            stop: compiledStopWords
+            requestOptions: {
+                temperature: data.requestOptions.temperature,
+                top_p: data.requestOptions.top_p,
+                num_ctx: data.requestOptions.num_ctx,
+                seed: data.requestOptions.seed,
+                num_predict: data.requestOptions.num_predict,
+                stop: compiledStopWords
+            }
         };
 
         const invokeEntry = {
@@ -399,8 +409,8 @@ function parseMessages(input) {
     return messages;
 }
 
-function findAllBenchmarkMessages(jsonString) {
-    const jsonObject = JSON.parse(jsonString);
+function findAllBenchmarkMessages(jsonObject) {
+    
     const messagesArray = [];
 
     function recursiveSearch(obj) {
@@ -417,88 +427,24 @@ function findAllBenchmarkMessages(jsonString) {
     return messagesArray;
 }
 
+function findRequestOptions(jsonObject) {
+    return jsonObject.RequestOptions;
+}
+
+function findModel(jsonObject) {
+    if (!jsonObject.Model) return null;
+
+    return jsonObject.Model;
+}
+
 async function initApp() {
     console.log('system loading...');
     setupSplitter();
 
     AIModelService.setup();
     await StateService.setup();
-    setupPromptUI();
-    setupVariableUI();
-    setupVersionTreeUI();
-    setupInvokeHistoryUI();
-    setupModelsUI();
-    setupTemperatureUI();
-    setupNumCtxUI();
-    setupNumPredictUI();
-    setupTopPUI();
-    setupStopWordsUI();
-
-    EventBus.subscribe('stateLoaded', () => {
-        updateVersionTreeUI();
-        updateVariableUI();
-    });
-    EventBus.subscribe('stateChanged', () => {
-        updateVersionTreeUI();
-        updateVariableUI();
-        updateInvokeHistoryUI(state.selectedNode);
-        updateTemperatureUI(state.selectedNode);
-        updateNumCtxUI(state.selectedNode);
-        updateNumPredictUI(state.selectedNode);
-        updateTopPUI(state.selectedNode);
-        updateStopWordsUI(state.selectedNode);
-        if (state.selectedNode) {
-            selectModelUI(state.selectedNode.model);
-        }
-    });
-    
-    document.getElementById('toggle-advanced').addEventListener('click', function() {
-        var advancedArea = document.getElementById('advanced-prompt-options');
-        if (advancedArea.style.display === 'none') {
-            advancedArea.style.display = 'block';
-            this.textContent = 'Hide Advanced Options';
-        } else {
-            advancedArea.style.display = 'none';
-            this.textContent = 'Show Advanced Options';
-        }
-    });
-
-    document.getElementById('add-message-btn').addEventListener('click', function() {
-        addUiChatMessage('','');
-    });
-        
-    document.getElementById('load-llama-prompt-btn').addEventListener('click', function() {
-        const messages = parseMessages(document.getElementById('load-llama-prompt-value').value)
-        
-        clearChatPrompts();
-
-        messages.forEach(message => {
-            addUiChatMessage(message.role, message.content);
-        });
-
-    });
-
-    document.getElementById('load-messages-btn').addEventListener('click', function () {
-        const messageGroup = findAllBenchmarkMessages(document.getElementById('load-messages-value').value)
-
-        messageGroup.forEach(messages => {
-            clearChatPrompts();
-            messages.forEach(message => {
-                addUiChatMessage(message.Role, message.Text);
-            });
-            promptModify();
-        });
-
-    });
-
-    document.getElementById('new-session-btn').addEventListener('click', async function() {
-        await StateService.deleteState();
-    }
-    );
-
-    document.getElementById('extract-flagged-btn').addEventListener('click', function() {
-        VersionTreeService.extractFlaggedNodes();
-    });
+  
+    setupUI();
 
     await StateService.initialize();
 }

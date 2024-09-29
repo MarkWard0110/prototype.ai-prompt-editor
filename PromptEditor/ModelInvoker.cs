@@ -49,9 +49,9 @@ namespace PromptEditor
             }
         }
 
-        public Task<ChatResponse> InvokeModelAsync(InvokeRequest request)
+        public Task<InvokeResponse> InvokeModelAsync(InvokeRequest request)
         {
-            var tcs = new TaskCompletionSource<ChatResponse>();
+            var tcs = new TaskCompletionSource<InvokeResponse>();
             var modelRequest = new ModelRequest(tcs, request);
             _requestQueue.Enqueue(modelRequest);
             return tcs.Task;
@@ -59,6 +59,7 @@ namespace PromptEditor
 
         private async Task ProcessQueueAsync(CancellationToken cancellationToken)
         {
+            var random = new Random();
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (_requestQueue.TryDequeue(out var request))
@@ -75,17 +76,15 @@ namespace PromptEditor
                                 Role = m.Role,
                                 Content = m.Content
                             }).ToList(),
-                            Options = new RequestOptions
-                            {
-                                Temperature = request.Temperature,
-                                Stop = request.Stop,
-                                TopP = request.TopP,
-                                NumCtx = request.NumCtx,
-                                NumPredict = request.NumPredict
-                            },
+                            Options = request.RequestOptions,
                             Stream = false,
                             KeepAlive = -1,
                         };
+
+                        if (chatRequest.Options.Seed.HasValue == false)
+                        {
+                            chatRequest.Options.Seed = random.Next(1, int.MaxValue);
+                        }
 
                         var timeout = TimeSpan.FromMinutes(TimeoutMinutes);
                         using var cts = new CancellationTokenSource(timeout);
@@ -107,7 +106,12 @@ namespace PromptEditor
                             };
                         }
 
-                        request.CompletionSource.SetResult(modelResponse);
+                        var invokeResponse = new InvokeResponse
+                        {
+                            chatResponse = modelResponse,
+                            requestOptions = request.RequestOptions
+                        };
+                        request.CompletionSource.SetResult(invokeResponse);
                     }
                     catch (Exception ex)
                     {

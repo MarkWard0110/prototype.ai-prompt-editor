@@ -45,6 +45,10 @@ body, html {
     margin-bottom: 20px;
 }
 
+#advanced-area {
+    margin-top: 5px;
+}
+
 #toggle-advanced{
     margin-bottom: 20px;
 }
@@ -98,6 +102,11 @@ body, html {
 
 .delete-btn {
     margin-left: 20px;
+}
+
+.request-options {
+    font-size: 0.8rem;
+    margin-top: 5px;
 }
 
 /*
