@@ -131,20 +131,43 @@ function updateInvokeHistoryUI() {
             var responseDuration = "";
             var tokensPerSecond = "";
             var seed = "";
+            var evalCount = "";
+            var promptevalCount = "";
+
+            var estimatedTokenCount = 10; // default for prompt template
+            var eTokenCount = '';
+            invokeItem.request.messages.forEach(message => {
+                const words = message.content.split(/\s+/).length;
+                estimatedTokenCount += Math.round(words * 2.5);  // llama 3 text 1.2  source code 2.5
+            });
+            eTokenCount = 'estimate tokens:' + estimatedTokenCount;
 
             if (invokeItem.hasResponse) {
                 responseText = invokeItem.response.chatResponse.message.content;
                 responseDuration = 's:' + (invokeItem.response.chatResponse.total_duration ? invokeItem.response.chatResponse.total_duration / 1000000000 : '');
                 tokensPerSecond = 'tps:' + (invokeItem.response.chatResponse.eval_count < 0 ? '' : invokeItem.response.chatResponse.eval_count / (invokeItem.response.chatResponse.eval_duration / 1e9));
                 seed = 'seed:' + (invokeItem.response.requestOptions.seed ? invokeItem.response.requestOptions.seed : '');
-            } 
-            
-            invokeResponse.value += `
+                evalCount = 'eval:' + (invokeItem.response.chatResponse.eval_count ? invokeItem.response.chatResponse.eval_count : '');
+                promptevalCount = 'prompt eval:' + (invokeItem.response.chatResponse.prompt_eval_count ? invokeItem.response.chatResponse.prompt_eval_count : '');
+
+                invokeResponse.value += `
 ---------------------------------------------------------------------
 Invoke ${index + 1}:
-RESPONSE:(${responseDuration} ${tokensPerSecond} ${seed})
+REQUEST: (${eTokenCount})
+RESPONSE:(${responseDuration} ${tokensPerSecond} ${seed} ${evalCount} ${promptevalCount})
 
 ${responseText}\n\n`;
+            }
+            else {
+                invokeResponse.value += `
+---------------------------------------------------------------------
+Invoke ${index + 1}:
+(${eTokenCount})
+
+${responseText}\n\n`;
+            }
+            
+            
         });
     }
 }
@@ -345,7 +368,7 @@ function updateRequestOptions(requestOptions) {
     if (!requestOptions) return;
 
     document.getElementById('temperature').value = requestOptions.temperature || 0.0;
-    document.getElementById('top_p').value = requestOptions.top_p || 0.0;
+    document.getElementById('top_p').value = requestOptions.top_p || 1.0;
     document.getElementById('seed').value = requestOptions.seed || '';
     document.getElementById('num_ctx').value = requestOptions.num_ctx || 2048;
     document.getElementById('num_predict').value = requestOptions.num_predict || -1;
@@ -419,15 +442,14 @@ function setupUI() {
         messageGroup.forEach(messages => {
             clearChatPrompts();
             messages.forEach(message => {
-                addUiChatMessage(message.Role, message.Text);
+                const role = getCaseInsensitiveProperty(message, "Role");
+                const content = getCaseInsensitiveProperty(message, "Text") || getCaseInsensitiveProperty(message, "content"); 
+                addUiChatMessage(role, content);
             });
             updateRequestOptions(requestOptions);
             selectModelUI(model);
             promptModify(); // save
         });
-
-        
-        
     });
 
     document.getElementById('new-session-btn').addEventListener('click', async function () {

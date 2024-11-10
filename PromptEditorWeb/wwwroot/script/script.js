@@ -415,7 +415,7 @@ function findAllBenchmarkMessages(jsonObject) {
 
     function recursiveSearch(obj) {
         for (const key in obj) {
-            if (key === "Messages" && Array.isArray(obj[key])) {
+            if (key.toLowerCase() === "messages" && Array.isArray(obj[key])) {
                 messagesArray.push(obj[key]);
             } else if (typeof obj[key] === "object" && obj[key] !== null) {
                 recursiveSearch(obj[key]);
@@ -428,13 +428,33 @@ function findAllBenchmarkMessages(jsonObject) {
 }
 
 function findRequestOptions(jsonObject) {
-    return jsonObject.RequestOptions;
+    if (jsonObject.RequestOptions) {
+        return jsonObject.RequestOptions;
+    }
+
+    if (jsonObject.options) {
+        return jsonObject.options;
+    }
+
+    return null;
 }
 
 function findModel(jsonObject) {
-    if (!jsonObject.Model) return null;
+    if (jsonObject.Model) {
+        return jsonObject.Model;
+    }
 
-    return jsonObject.Model;
+    if (jsonObject.model) {
+        return jsonObject.model;
+    }
+
+    return null;
+}
+
+function getCaseInsensitiveProperty(obj, key) {
+    const lowerCaseKey = key.toLowerCase();
+    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === lowerCaseKey);
+    return foundKey ? obj[foundKey] : undefined;
 }
 
 async function initApp() {
