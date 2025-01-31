@@ -13,9 +13,9 @@ namespace PromptEditorWeb
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-
-            var ollamaService = new OllamaService("http://quorra.homelan.binaryward.com:11434");
-            var modelInvoker = new ModelInvoker("http://quorra.homelan.binaryward.com:11434", maxConcurrentInvocations: 1);
+            var serverUrl = "http://quorra.homelan.binaryward.com:11434";
+            var ollamaService = new OllamaService(serverUrl);
+            var modelInvoker = new ModelInvoker(serverUrl, maxConcurrentInvocations: 1);
             modelInvoker.Start();
             builder.Services.AddSingleton<IOllamaService>(sp => ollamaService);
             builder.Services.AddSingleton<IModelInvoker>(sp => modelInvoker);

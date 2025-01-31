@@ -368,7 +368,7 @@ function updateRequestOptions(requestOptions) {
     if (!requestOptions) return;
 
     document.getElementById('temperature').value = requestOptions.temperature || 0.0;
-    document.getElementById('top_p').value = requestOptions.top_p || 1.0;
+    document.getElementById('top_p').value = requestOptions.top_p || 0.0;
     document.getElementById('seed').value = requestOptions.seed || '';
     document.getElementById('num_ctx').value = requestOptions.num_ctx || 2048;
     document.getElementById('num_predict').value = requestOptions.num_predict || -1;
