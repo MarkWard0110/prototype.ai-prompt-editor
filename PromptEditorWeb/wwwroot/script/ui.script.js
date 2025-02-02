@@ -45,6 +45,7 @@ function promptModify() {
     const temperature = parseFloat(document.getElementById('temperature').value);
     const num_ctx = parseFloat(document.getElementById('num_ctx').value);
     const top_p = parseFloat(document.getElementById('top_p').value);
+    const top_k = parseFloat(document.getElementById('top_k').value);
     const seed = document.getElementById('seed').value !== '' ? parseFloat(document.getElementById('seed').value) : null;
     const num_predict = parseFloat(document.getElementById('num_predict').value);
     const stopWords = document.getElementById('stop-word-list').value !== '' ? document.getElementById('stop-word-list').value : null;
@@ -55,6 +56,7 @@ function promptModify() {
         requestOptions: {
             temperature: temperature,
             top_p: top_p,
+            top_k: top_k,
             num_ctx: num_ctx,
             seed: seed,
             num_predict: num_predict,
@@ -369,6 +371,7 @@ function updateRequestOptions(requestOptions) {
 
     document.getElementById('temperature').value = requestOptions.temperature || 0.0;
     document.getElementById('top_p').value = requestOptions.top_p || 0.0;
+    document.getElementById('top_k').value = requestOptions.top_k || 40;
     document.getElementById('seed').value = requestOptions.seed || '';
     document.getElementById('num_ctx').value = requestOptions.num_ctx || 2048;
     document.getElementById('num_predict').value = requestOptions.num_predict || -1;

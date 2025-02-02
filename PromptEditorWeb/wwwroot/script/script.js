@@ -170,6 +170,10 @@ const VersionTreeService = {
                 isModified = true;
             }
 
+            if (data.requestOptions.top_k !== state.selectedNode.requestOptions.top_k) {
+                isModified = true;
+            }
+
             if (data.requestOptions.num_ctx !== state.selectedNode.requestOptions.num_ctx) {
                 isModified = true;
             }
@@ -200,6 +204,7 @@ const VersionTreeService = {
             requestOptions: {
                 temperature: data.requestOptions.temperature,
                 top_p: data.requestOptions.top_p,
+                top_k: data.requestOptions.top_k,
                 num_ctx: data.requestOptions.num_ctx,
                 seed: data.requestOptions.seed,
                 num_predict: data.requestOptions.num_predict,
@@ -350,6 +355,7 @@ const PromptServerService = {
             requestOptions: {
                 temperature: data.requestOptions.temperature,
                 top_p: data.requestOptions.top_p,
+                top_k: data.requestOptions.top_k,
                 num_ctx: data.requestOptions.num_ctx,
                 seed: data.requestOptions.seed,
                 num_predict: data.requestOptions.num_predict,
